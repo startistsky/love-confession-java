@@ -1,1 +1,135 @@
-var $window=$(window),gardenCtx,gardenCanvas,$garden,garden;var clientWidth=$(window).width();var clientHeight=$(window).height();$(function(){$loveHeart=$("#loveHeart");var a=$loveHeart.width()/2;var b=$loveHeart.height()/2-55;$garden=$("#garden");gardenCanvas=$garden[0];gardenCanvas.width=$("#loveHeart").width();gardenCanvas.height=$("#loveHeart").height();gardenCtx=gardenCanvas.getContext("2d");gardenCtx.globalCompositeOperation="lighter";garden=new Garden(gardenCtx,gardenCanvas);$("#content").css("width",$loveHeart.width()+$("#code").width());$("#content").css("height",Math.max($loveHeart.height(),$("#code").height()));$("#content").css("margin-top",Math.max(($window.height()-$("#content").height())/2,10));$("#content").css("margin-left",Math.max(($window.width()-$("#content").width())/2,10));setInterval(function(){garden.render()},Garden.options.growSpeed)});$(window).resize(function(){var b=$(window).width();var a=$(window).height();if(b!=clientWidth&&a!=clientHeight){location.replace(location)}});function getHeartPoint(c){var b=c/Math.PI;var a=19.5*(16*Math.pow(Math.sin(b),3));var d=-20*(13*Math.cos(b)-5*Math.cos(2*b)-2*Math.cos(3*b)-Math.cos(4*b));return new Array(offsetX+a,offsetY+d)}function startHeartAnimation(){var c=50;var d=10;var b=new Array();var a=setInterval(function(){var h=getHeartPoint(d);var e=true;for(var f=0;f<b.length;f++){var g=b[f];var j=Math.sqrt(Math.pow(g[0]-h[0],2)+Math.pow(g[1]-h[1],2));if(j<Garden.options.bloomRadius.max*1.3){e=false;break}}if(e){b.push(h);garden.createRandomBloom(h[0],h[1])}if(d>=30){clearInterval(a);showMessages()}else{d+=0.2}},c)}(function(a){a.fn.typewriter=function(){this.each(function(){var d=a(this),c=d.html(),b=0;d.html("");var e=setInterval(function(){var f=c.substr(b,1);if(f=="<"){b=c.indexOf(">",b)+1}else{b++}d.html(c.substring(0,b)+(b&1?"_":""));if(b>=c.length){clearInterval(e)}},75)});return this}})(jQuery);function timeElapse(c){var e=Date();var f=(Date.parse(e)-Date.parse(c))/1000;var g=Math.floor(f/(3600*24));f=f%(3600*24);var b=Math.floor(f/3600);if(b<10){b="0"+b}f=f%3600;var d=Math.floor(f/60);if(d<10){d="0"+d}f=f%60;if(f<10){f="0"+f}var a='<span class="digit">'+g+'</span> days <span class="digit">'+b+'</span> hours <span class="digit">'+d+'</span> minutes <span class="digit">'+f+"</span> seconds";$("#elapseClock").html(a)}function showMessages(){adjustWordsPosition();$("#messages").fadeIn(5000,function(){showLoveU()})}function adjustWordsPosition(){$("#words").css("position","absolute");$("#words").css("top",$("#garden").position().top+195);$("#words").css("left",$("#garden").position().left+70)}function adjustCodePosition(){$("#code").css("margin-top",($("#garden").height()-$("#code").height())/2)}function showLoveU(){$("#loveu").fadeIn(3000)};
+/* global $, Garden, getHeartPoint, garden */
+
+// ===== Typewriter effect =====
+(function ($) {
+    $.fn.typewriter = function () {
+        this.each(function () {
+            var $ele = $(this), str = $ele.html(), progress = 0;
+            $ele.html("");
+            var timer = setInterval(function () {
+                var current = str.substr(progress, 1);
+                if (current === "<") {
+                    progress = str.indexOf(">", progress) + 1;
+                } else {
+                    progress++;
+                }
+                $ele.html(str.substring(0, progress) + (progress & 1 ? "_" : ""));
+                if (progress >= str.length) {
+                    clearInterval(timer);
+                    $ele.html(str); // 去掉光标
+                }
+            }, 40);
+        });
+        return this;
+    };
+})(jQuery);
+
+// ===== Time counter =====
+function timeElapse(date) {
+    var current = new Date();
+    var seconds = Math.floor((current - date) / 1000);
+    var days = Math.floor(seconds / (3600 * 24));
+    seconds = seconds % (3600 * 24);
+    var hours = Math.floor(seconds / 3600);
+    seconds = seconds % 3600;
+    var minutes = Math.floor(seconds / 60);
+    seconds = seconds % 60;
+
+    var result =
+        "<span class='digit'>" + days + "</span> days " +
+        "<span class='digit'>" + (hours < 10 ? "0" : "") + hours + "</span> hours " +
+        "<span class='digit'>" + (minutes < 10 ? "0" : "") + minutes + "</span> minutes " +
+        "<span class='digit'>" + (seconds < 10 ? "0" : "") + seconds + "</span> seconds";
+
+    $("#elapseClock").html(result);
+}
+
+// ===== Code position (keep classic look) =====
+function adjustCodePosition() {
+    // 在小屏不需要强行往下推，避免布局乱
+    if (window.matchMedia && window.matchMedia("(max-width: 900px)").matches) return;
+
+    $("#code").css("margin-top", Math.max(0, ($("#loveHeart").height() - $("#code").height()) / 2));
+}
+
+// ===== Responsive canvas resize =====
+function resizeHeartCanvas() {
+    var $heart = $("#loveHeart");
+    var canvas = $("#garden")[0];
+    if (!canvas) return;
+
+    // 设置 canvas 实际像素大小，避免高清屏模糊
+    var ratio = window.devicePixelRatio || 1;
+    var w = Math.max(1, $heart.width());
+    var h = Math.max(1, $heart.height());
+
+    canvas.width = Math.floor(w * ratio);
+    canvas.height = Math.floor(h * ratio);
+    canvas.style.width = w + "px";
+    canvas.style.height = h + "px";
+
+    var ctx = canvas.getContext("2d");
+    if (ctx) ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+    // 更新全局偏移（index.html 里用到）
+    if (typeof offsetX !== "undefined") offsetX = w / 2;
+    if (typeof offsetY !== "undefined") offsetY = h / 2 - 55;
+}
+
+// ===== Heart animation =====
+var animationTimer = null;
+
+function startHeartAnimation() {
+    // 确保画布尺寸正确
+    resizeHeartCanvas();
+
+    var interval = 50;
+    var angle = 10;
+
+    var heart = new Array();
+    var points = 50; // 颗粒密度
+    var i = 0;
+
+    // garden / Garden 在 garden.js 里
+    animationTimer = setInterval(function () {
+        var bloom = getHeartPoint(angle);
+        var draw = true;
+
+        for (var j = 0; j < heart.length; j++) {
+            var p = heart[j];
+            var distance = Math.sqrt(Math.pow(p[0] - bloom[0], 2) + Math.pow(p[1] - bloom[1], 2));
+            if (distance < Garden.options.bloomRadius.max * 1.3) {
+                draw = false;
+                break;
+            }
+        }
+
+        if (draw) {
+            heart.push(bloom);
+            garden.createRandomBloom(bloom[0], bloom[1]);
+        }
+
+        if (angle >= 30) {
+            clearInterval(animationTimer);
+            $("#messages").fadeIn(2000);
+        } else {
+            angle += 0.2;
+        }
+    }, interval);
+}
+
+// ===== Hook resize =====
+$(function () {
+    // 初始 resize
+    resizeHeartCanvas();
+
+    // resize / orientation change
+    var resizeTimeout = null;
+    $(window).on("resize orientationchange", function () {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function () {
+            resizeHeartCanvas();
+            adjustCodePosition();
+        }, 150);
+    });
+});

@@ -220,6 +220,11 @@ function timeElapse(c) {
 ========================= */
 function showMessages() {
     $("#messages").fadeIn(2000);
+
+    // 🌸 打字结束后，延迟显示最终告白
+    setTimeout(function () {
+        $("#finalLove").fadeIn(2000);
+    }, 1000);
 }
 
 /* PC only */

@@ -1,3 +1,9 @@
+/* ===== Base ===== */
+html, body {
+	width: 100%;
+	overflow-x: hidden;
+}
+
 body {
 	margin: 0;
 	padding: 0;
@@ -6,46 +12,46 @@ body {
 	overflow: auto;
 }
 
-html, body{
-	width:100%;
-	overflow-x:hidden;
-}
-
-#mainDiv{
+#mainDiv {
 	width: 100%;
 	min-height: 100vh;
 	font-size: 14px;
 }
 
-/* ===== Layout ===== */
-#content{
+/* ===== Layout (PC default) ===== */
+#content {
 	max-width: 1200px;
 	margin: 0 auto;
 	padding: 16px;
+
 	display: flex;
 	gap: 16px;
 	align-items: flex-start;
 }
 
-/* 左侧文字 */
+/* Left text */
 #code {
 	flex: 0 1 440px;
 	max-width: 520px;
 	height: auto;
+
 	color: #333;
 	font-family: "Consolas", "Monaco", "Bitstream Vera Sans Mono", "Courier New", "sans-serif";
 	font-size: 12px;
 	line-height: 1.7;
 	word-break: break-word;
+	/* 如果你希望整体文字居中，也可以在 HTML 里给 #code 加 text-align:center */
 }
 
-/* 右侧爱心 */
+/* Right heart (PC) */
 #loveHeart {
 	flex: 1 1 auto;
-	max-width: 720px;
 	width: 100%;
+	max-width: 720px;
 	height: 625px;
+
 	position: relative;
+	margin: 0 auto;        /* ✅ 关键：在右侧 flex 区域内居中 */
 }
 
 #garden {
@@ -54,8 +60,8 @@ html, body{
 	display: block;
 }
 
-/* ✅ 关键：把中间文字固定居中在爱心区域 */
-#words{
+/* Words centered inside heart */
+#words {
 	font-family: "sans-serif";
 	position: absolute;
 	left: 0;
@@ -70,15 +76,14 @@ html, body{
 	justify-content: center;
 
 	text-align: center;
-	font-size: 22px;    /* 比原来小一点，更精致 */
-	color:#666;
+	font-size: 22px;
+	color: #666;
 
 	pointer-events: none;
-	/* 想再往上/下调就改这行：- 往上 + 往下 */
-	transform: translateY(-10px);
+	transform: translateY(-10px); /* 微调上下位置 */
 }
 
-#messages{
+#messages {
 	display: none;
 }
 
@@ -88,19 +93,19 @@ html, body{
 	margin-top: 12px;
 }
 
-#elapseClock .digit{
+#elapseClock .digit {
 	font-family: "digit";
 	font-size: 34px;
 }
 
-/* 其他原样保留 */
-#code .string{ color: #2a36ff; }
-#code .keyword{ color: #000000; }
-#code .placeholder{ margin-left:15px; }
-#code .space{ margin-left:7px; }
-#code .comments{ color: #3f7f5f; }
+/* Keep original helpers */
+#code .string { color: #2a36ff; }
+#code .keyword { color: #000000; }
+#code .placeholder { margin-left: 15px; }
+#code .space { margin-left: 7px; }
+#code .comments { color: #3f7f5f; } /* 如果你想全局署名变黑，把这里改成 #333 */
 
-#loveu{
+#loveu {
 	padding: 5px;
 	font-size: 24px;
 	margin-top: 80px;
@@ -109,63 +114,71 @@ html, body{
 	display: none;
 }
 
-#loveu .signature{
+#loveu .signature {
 	margin-top: 10px;
 	font-size: 20px;
 	font-style: italic;
 }
 
-#clickSound{ display:none; }
-
-#copyright{
-	margin-top: 10px;
-	text-align: center;
-	width:100%;
-	color:#666;
+#clickSound {
+	display: none;
 }
 
-#errorMsg{
+#copyright {
+	margin-top: 10px;
+	text-align: center;
+	width: 100%;
+	color: #666;
+}
+
+#errorMsg {
 	width: 100%;
 	text-align: center;
 	font-size: 24px;
 	position: absolute;
 	top: 100px;
-	left:0px;
+	left: 0;
 }
 
-#copyright a{ color:#666; }
+#copyright a {
+	color: #666;
+}
 
 /* ===== Mobile / Tablet ===== */
-@media (max-width: 900px){
-	#content{
+@media (max-width: 900px) {
+	#content {
 		flex-direction: column;
-		align-items: flex-start;
+		align-items: stretch;  /* ✅ 拉满容器，居中交给内部 */
 		padding: 12px;
 	}
 
-	#code{
+	#code {
 		width: 100%;
 		max-width: 720px;
-		font-size: 16px;  /* 手机上更易读 */
+		font-size: 16px;
+		margin: 0 auto;        /* ✅ 居中 */
 	}
 
-	#loveHeart{
+	#loveHeart {
 		width: 100%;
 		max-width: 720px;
-		height: 58vh;       /* 与 JS 配合：更紧凑 */
+
+		height: 58vh;          /* 与 JS 配合 */
 		min-height: 360px;
+
+		margin: 0 auto;        /* ✅ 手机端也居中 */
 	}
 
-	#words{
+	#words {
 		font-size: 20px;
 		transform: translateY(-6px);
 	}
 
-	#elapseClock{
+	#elapseClock {
 		font-size: 16px;
 	}
 
-	#elapseClock .digit{
+	#elapseClock .digit {
 		font-size: 30px;
 	}
 }

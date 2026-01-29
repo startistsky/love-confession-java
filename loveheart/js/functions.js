@@ -1,11 +1,150 @@
-/* global $, Garden, getHeartPoint, garden */
+/* global $, Garden */
 
-// ===== Typewriter effect =====
+// ======================
+//  Heart + Garden Setup
+// ======================
+var garden = null;
+var gardenCanvas = null;
+var gardenCtx = null;
+var gardenTimer = null;
+
+function initGarden() {
+    var canvas = $("#garden");
+    gardenCanvas = canvas[0];
+    if (!gardenCanvas) return;
+
+    // 设置 canvas 尺寸（含高清屏）
+    resizeGardenCanvas();
+
+    gardenCtx = gardenCanvas.getContext("2d");
+    garden = new Garden(gardenCtx, gardenCanvas);
+
+    // 循环渲染花朵
+    if (gardenTimer) clearInterval(gardenTimer);
+    gardenTimer = setInterval(function () {
+        garden.render();
+    }, Garden.options.growSpeed);
+}
+
+function resizeGardenCanvas() {
+    var $heart = $("#loveHeart");
+    if ($heart.length === 0) return;
+
+    var w = Math.max(1, $heart.width());
+    var h = Math.max(1, $heart.height());
+    var ratio = window.devicePixelRatio || 1;
+
+    // 真实像素尺寸
+    gardenCanvas = $("#garden")[0];
+    gardenCanvas.width = Math.floor(w * ratio);
+    gardenCanvas.height = Math.floor(h * ratio);
+
+    // 显示尺寸
+    gardenCanvas.style.width = w + "px";
+    gardenCanvas.style.height = h + "px";
+
+    // 缩放 context，防止模糊
+    var ctx = gardenCanvas.getContext("2d");
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+    // 更新全局偏移（你的 index.html 里用 offsetX/offsetY）
+    if (typeof offsetX !== "undefined") offsetX = w / 2;
+    if (typeof offsetY !== "undefined") offsetY = h / 2 - 55;
+}
+
+// ======================
+//  Heart Math
+// ======================
+function getHeartPoint(angle) {
+    var t = angle / Math.PI;
+
+    // 经典心形参数方程
+    var x = 19.5 * (16 * Math.pow(Math.sin(t), 3));
+    var y = -20 * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+
+    return [offsetX + x, offsetY + y];
+}
+
+// ======================
+//  Heart Animation
+// ======================
+var heartPoints = [];
+var animationTimer = null;
+
+function startHeartAnimation() {
+    if (!garden) initGarden();
+
+    var angle = 10;
+    heartPoints = [];
+
+    if (animationTimer) clearInterval(animationTimer);
+
+    animationTimer = setInterval(function () {
+        var bloom = getHeartPoint(angle);
+        var draw = true;
+
+        for (var i = 0; i < heartPoints.length; i++) {
+            var p = heartPoints[i];
+            var dx = p[0] - bloom[0];
+            var dy = p[1] - bloom[1];
+            var distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < Garden.options.bloomRadius.max * 1.25) {
+                draw = false;
+                break;
+            }
+        }
+
+        if (draw) {
+            heartPoints.push(bloom);
+            garden.createRandomBloom(bloom[0], bloom[1]);
+        }
+
+        if (angle >= 30) {
+            clearInterval(animationTimer);
+            $("#messages").fadeIn(2000);
+        } else {
+            angle += 0.2;
+        }
+    }, 50);
+}
+
+// ======================
+//  Time + Typewriter
+// ======================
+function timeElapse(date) {
+    var current = new Date();
+    var seconds = Math.floor((current - date) / 1000);
+    var days = Math.floor(seconds / (3600 * 24));
+    seconds = seconds % (3600 * 24);
+
+    var hours = Math.floor(seconds / 3600);
+    seconds = seconds % 3600;
+
+    var minutes = Math.floor(seconds / 60);
+    seconds = seconds % 60;
+
+    function pad(n) {
+        return n < 10 ? "0" + n : "" + n;
+    }
+
+    var result =
+        "<span class='digit'>" + days + "</span> days " +
+        "<span class='digit'>" + pad(hours) + "</span> hours " +
+        "<span class='digit'>" + pad(minutes) + "</span> minutes " +
+        "<span class='digit'>" + pad(seconds) + "</span> seconds";
+
+    $("#elapseClock").html(result);
+}
+
 (function ($) {
     $.fn.typewriter = function () {
         this.each(function () {
-            var $ele = $(this), str = $ele.html(), progress = 0;
+            var $ele = $(this);
+            var str = $ele.html();
+            var progress = 0;
             $ele.html("");
+
             var timer = setInterval(function () {
                 var current = str.substr(progress, 1);
                 if (current === "<") {
@@ -16,7 +155,7 @@
                 $ele.html(str.substring(0, progress) + (progress & 1 ? "_" : ""));
                 if (progress >= str.length) {
                     clearInterval(timer);
-                    $ele.html(str); // 去掉光标
+                    $ele.html(str);
                 }
             }, 40);
         });
@@ -24,111 +163,32 @@
     };
 })(jQuery);
 
-// ===== Time counter =====
-function timeElapse(date) {
-    var current = new Date();
-    var seconds = Math.floor((current - date) / 1000);
-    var days = Math.floor(seconds / (3600 * 24));
-    seconds = seconds % (3600 * 24);
-    var hours = Math.floor(seconds / 3600);
-    seconds = seconds % 3600;
-    var minutes = Math.floor(seconds / 60);
-    seconds = seconds % 60;
-
-    var result =
-        "<span class='digit'>" + days + "</span> days " +
-        "<span class='digit'>" + (hours < 10 ? "0" : "") + hours + "</span> hours " +
-        "<span class='digit'>" + (minutes < 10 ? "0" : "") + minutes + "</span> minutes " +
-        "<span class='digit'>" + (seconds < 10 ? "0" : "") + seconds + "</span> seconds";
-
-    $("#elapseClock").html(result);
-}
-
-// ===== Code position (keep classic look) =====
+// 电脑端把代码区域稍微下移保持经典效果（手机不强制）
 function adjustCodePosition() {
-    // 在小屏不需要强行往下推，避免布局乱
     if (window.matchMedia && window.matchMedia("(max-width: 900px)").matches) return;
-
-    $("#code").css("margin-top", Math.max(0, ($("#loveHeart").height() - $("#code").height()) / 2));
+    var mt = Math.max(0, ($("#loveHeart").height() - $("#code").height()) / 2);
+    $("#code").css("margin-top", mt);
 }
 
-// ===== Responsive canvas resize =====
-function resizeHeartCanvas() {
-    var $heart = $("#loveHeart");
-    var canvas = $("#garden")[0];
-    if (!canvas) return;
-
-    // 设置 canvas 实际像素大小，避免高清屏模糊
-    var ratio = window.devicePixelRatio || 1;
-    var w = Math.max(1, $heart.width());
-    var h = Math.max(1, $heart.height());
-
-    canvas.width = Math.floor(w * ratio);
-    canvas.height = Math.floor(h * ratio);
-    canvas.style.width = w + "px";
-    canvas.style.height = h + "px";
-
-    var ctx = canvas.getContext("2d");
-    if (ctx) ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-
-    // 更新全局偏移（index.html 里用到）
-    if (typeof offsetX !== "undefined") offsetX = w / 2;
-    if (typeof offsetY !== "undefined") offsetY = h / 2 - 55;
-}
-
-// ===== Heart animation =====
-var animationTimer = null;
-
-function startHeartAnimation() {
-    // 确保画布尺寸正确
-    resizeHeartCanvas();
-
-    var interval = 50;
-    var angle = 10;
-
-    var heart = new Array();
-    var points = 50; // 颗粒密度
-    var i = 0;
-
-    // garden / Garden 在 garden.js 里
-    animationTimer = setInterval(function () {
-        var bloom = getHeartPoint(angle);
-        var draw = true;
-
-        for (var j = 0; j < heart.length; j++) {
-            var p = heart[j];
-            var distance = Math.sqrt(Math.pow(p[0] - bloom[0], 2) + Math.pow(p[1] - bloom[1], 2));
-            if (distance < Garden.options.bloomRadius.max * 1.3) {
-                draw = false;
-                break;
-            }
-        }
-
-        if (draw) {
-            heart.push(bloom);
-            garden.createRandomBloom(bloom[0], bloom[1]);
-        }
-
-        if (angle >= 30) {
-            clearInterval(animationTimer);
-            $("#messages").fadeIn(2000);
-        } else {
-            angle += 0.2;
-        }
-    }, interval);
-}
-
-// ===== Hook resize =====
+// ======================
+//  Auto Resize Hook
+// ======================
 $(function () {
-    // 初始 resize
-    resizeHeartCanvas();
+    // 初始化画布
+    initGarden();
+    adjustCodePosition();
 
-    // resize / orientation change
-    var resizeTimeout = null;
+    // resize 时重设画布 + 重新创建 garden（避免尺寸错乱）
+    var t = null;
     $(window).on("resize orientationchange", function () {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(function () {
-            resizeHeartCanvas();
+        clearTimeout(t);
+        t = setTimeout(function () {
+            // 重新设置 canvas 尺寸
+            resizeGardenCanvas();
+
+            // 重新创建 garden（最稳）
+            initGarden();
+
             adjustCodePosition();
         }, 150);
     });

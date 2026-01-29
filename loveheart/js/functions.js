@@ -1,20 +1,30 @@
-var $window = $(window), gardenCtx, gardenCanvas, $garden, garden;
+var $window = $(window),
+    gardenCtx,
+    gardenCanvas,
+    $garden,
+    garden;
 
-// 兼容：在不同屏幕下动态计算 offset
 var offsetX = 0;
 var offsetY = 0;
+var heartScale = 1;
 
+var renderTimer = null;
+
+/* =========================
+   Resize + Layout
+========================= */
 function resizeLayoutAndCanvas() {
     var $loveHeart = $("#loveHeart");
     var $code = $("#code");
     var $content = $("#content");
+
     if ($loveHeart.length === 0 || $garden.length === 0) return;
 
-    // 手机/平板：上下排（让爱心可见）
     var isSmall = window.matchMedia && window.matchMedia("(max-width: 900px)").matches;
 
+    /* ---- Layout ---- */
     if (isSmall) {
-        // 上下排：让 #content 自然流动，不要 JS 强行算宽高和 margin
+        // 手机 / 平板：上下排
         $content.css({
             width: "100%",
             height: "auto",
@@ -24,7 +34,7 @@ function resizeLayoutAndCanvas() {
 
         $loveHeart.css({
             width: "100%",
-            height: Math.max(Math.floor(window.innerHeight * 0.7), 420) + "px"
+            height: Math.max(Math.floor(window.innerHeight * 0.65), 420) + "px"
         });
 
         $code.css({
@@ -32,8 +42,7 @@ function resizeLayoutAndCanvas() {
             height: "auto"
         });
     } else {
-        // 电脑：左右排，保留经典效果
-        // 让 layout 由 CSS flex 控制，JS 不再固定 content 宽度
+        // PC：左右排（保持经典）
         $content.css({
             width: "",
             height: "",
@@ -41,13 +50,12 @@ function resizeLayoutAndCanvas() {
             marginLeft: ""
         });
 
-        // 电脑端给一个稳定高度（可按你喜好调）
         $loveHeart.css({
             height: "625px"
         });
     }
 
-    // 更新 canvas 实际尺寸（含高清屏）
+    /* ---- Canvas Size ---- */
     gardenCanvas = $garden[0];
     var w = Math.max(1, $loveHeart.width());
     var h = Math.max(1, $loveHeart.height());
@@ -62,29 +70,31 @@ function resizeLayoutAndCanvas() {
     gardenCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
     gardenCtx.globalCompositeOperation = "lighter";
 
+    /* ---- Heart Center ---- */
     offsetX = w / 2;
+    offsetY = isSmall ? h / 2 : h / 2 - 55;
 
-// 手机/平板不要往上推，避免爱心被裁
-    if (window.matchMedia && window.matchMedia("(max-width: 900px)").matches) {
-        offsetY = h / 2;
+    /* ---- Heart Scale ---- */
+    if (isSmall) {
+        heartScale = Math.min(w, h) / 600;   // 数字越大 → 心越小
+        heartScale = Math.max(0.6, Math.min(0.85, heartScale));
     } else {
-        offsetY = h / 2 - 55;
+        heartScale = 1;
     }
 
-    // 如果 garden 已经存在，清一下避免残影
     if (garden) {
         try { garden.clear(); } catch (e) {}
     }
 }
 
-// 初始化 garden + render 循环（只做一次）
-var renderTimer = null;
+/* =========================
+   Init Garden
+========================= */
 function initGarden() {
     $garden = $("#garden");
     if ($garden.length === 0) return;
 
     resizeLayoutAndCanvas();
-
     garden = new Garden(gardenCtx, gardenCanvas);
 
     if (renderTimer) clearInterval(renderTimer);
@@ -93,66 +103,85 @@ function initGarden() {
     }, Garden.options.growSpeed);
 }
 
-// 原版心形点
+/* =========================
+   Heart Math
+========================= */
 function getHeartPoint(c) {
     var b = c / Math.PI;
     var a = 19.5 * (16 * Math.pow(Math.sin(b), 3));
-    var d = -20 * (13 * Math.cos(b) - 5 * Math.cos(2 * b) - 2 * Math.cos(3 * b) - Math.cos(4 * b));
-    return new Array(offsetX + a, offsetY + d);
+    var d = -20 * (13 * Math.cos(b)
+        - 5 * Math.cos(2 * b)
+        - 2 * Math.cos(3 * b)
+        - Math.cos(4 * b));
+
+    a *= heartScale;
+    d *= heartScale;
+
+    return [offsetX + a, offsetY + d];
 }
 
-// 原版爱心动画（保持不变，保证兼容你的 garden.js）
+/* =========================
+   Heart Animation
+========================= */
 function startHeartAnimation() {
     if (!garden) initGarden();
 
-    var c = 50;
-    var d = 10;
-    var b = new Array();
+    var interval = 50;
+    var angle = 10;
+    var heart = [];
 
-    var a = setInterval(function () {
-        var h = getHeartPoint(d);
-        var e = true;
+    var timer = setInterval(function () {
+        var bloom = getHeartPoint(angle);
+        var draw = true;
 
-        for (var f = 0; f < b.length; f++) {
-            var g = b[f];
-            var j = Math.sqrt(Math.pow(g[0] - h[0], 2) + Math.pow(g[1] - h[1], 2));
-            if (j < Garden.options.bloomRadius.max * 1.3) {
-                e = false;
+        for (var i = 0; i < heart.length; i++) {
+            var p = heart[i];
+            var dist = Math.sqrt(
+                Math.pow(p[0] - bloom[0], 2) +
+                Math.pow(p[1] - bloom[1], 2)
+            );
+            if (dist < Garden.options.bloomRadius.max * 1.3) {
+                draw = false;
                 break;
             }
         }
 
-        if (e) {
-            b.push(h);
-            garden.createRandomBloom(h[0], h[1]);
+        if (draw) {
+            heart.push(bloom);
+            garden.createRandomBloom(bloom[0], bloom[1]);
         }
 
-        if (d >= 30) {
-            clearInterval(a);
+        if (angle >= 30) {
+            clearInterval(timer);
             showMessages();
         } else {
-            d += 0.2;
+            angle += 0.2;
         }
-    }, c);
+    }, interval);
 }
 
-// 打字机（原版保留）
-(function (a) {
-    a.fn.typewriter = function () {
+/* =========================
+   Effects
+========================= */
+(function ($) {
+    $.fn.typewriter = function () {
         this.each(function () {
-            var d = a(this), c = d.html(), b = 0;
-            d.html("");
-            var e = setInterval(function () {
-                var f = c.substr(b, 1);
-                if (f == "<") {
-                    b = c.indexOf(">", b) + 1;
+            var $ele = $(this),
+                str = $ele.html(),
+                progress = 0;
+            $ele.html("");
+
+            var timer = setInterval(function () {
+                var current = str.substr(progress, 1);
+                if (current === "<") {
+                    progress = str.indexOf(">", progress) + 1;
                 } else {
-                    b++;
+                    progress++;
                 }
-                d.html(c.substring(0, b) + (b & 1 ? "_" : ""));
-                if (b >= c.length) {
-                    clearInterval(e);
-                    d.html(c);
+                $ele.html(str.substring(0, progress) + (progress & 1 ? "_" : ""));
+                if (progress >= str.length) {
+                    clearInterval(timer);
+                    $ele.html(str);
                 }
             }, 75);
         });
@@ -161,19 +190,26 @@ function startHeartAnimation() {
 })(jQuery);
 
 function timeElapse(c) {
-    var e = Date();
-    var f = (Date.parse(e) - Date.parse(c)) / 1000;
-    var g = Math.floor(f / (3600 * 24));
-    f = f % (3600 * 24);
-    var b = Math.floor(f / 3600);
-    if (b < 10) { b = "0" + b; }
-    f = f % 3600;
-    var d = Math.floor(f / 60);
-    if (d < 10) { d = "0" + d; }
-    f = f % 60;
-    if (f < 10) { f = "0" + f; }
-    var a = '<span class="digit">' + g + '</span> days <span class="digit">' + b + '</span> hours <span class="digit">' + d + '</span> minutes <span class="digit">' + f + "</span> seconds";
-    $("#elapseClock").html(a);
+    var now = Date();
+    var seconds = (Date.parse(now) - Date.parse(c)) / 1000;
+
+    var days = Math.floor(seconds / (3600 * 24));
+    seconds %= 3600 * 24;
+
+    var hours = Math.floor(seconds / 3600);
+    seconds %= 3600;
+
+    var minutes = Math.floor(seconds / 60);
+    seconds %= 60;
+
+    function pad(n) { return n < 10 ? "0" + n : n; }
+
+    $("#elapseClock").html(
+        "<span class='digit'>" + days + "</span> days " +
+        "<span class='digit'>" + pad(hours) + "</span> hours " +
+        "<span class='digit'>" + pad(minutes) + "</span> minutes " +
+        "<span class='digit'>" + pad(seconds) + "</span> seconds"
+    );
 }
 
 function showMessages() {
@@ -182,24 +218,27 @@ function showMessages() {
 }
 
 function adjustWordsPosition() {
-    // 让文字在爱心区域里居中一点，手机上也适配
-    $("#words").css("position", "absolute");
-    $("#words").css("top", ($("#loveHeart").height() * 0.28) + "px");
-    $("#words").css("left", ($("#loveHeart").width() * 0.12) + "px");
+    $("#words").css({
+        position: "absolute",
+        top: ($("#loveHeart").height() * 0.3) + "px",
+        left: ($("#loveHeart").width() * 0.12) + "px"
+    });
 }
 
 function adjustCodePosition() {
-    // 手机不需要强制 margin-top
     if (window.matchMedia && window.matchMedia("(max-width: 900px)").matches) return;
-    $("#code").css("margin-top", ($("#garden").height() - $("#code").height()) / 2);
+    $("#code").css("margin-top",
+        ($("#garden").height() - $("#code").height()) / 2
+    );
 }
 
+/* =========================
+   Ready + Resize
+========================= */
 $(function () {
     initGarden();
     adjustCodePosition();
 
-    // ✅ 关键：不要再 resize 就 location.replace 刷新
-    // 改成：resize 时重算布局 + 重建 garden（更稳）
     var t = null;
     $(window).on("resize orientationchange", function () {
         clearTimeout(t);

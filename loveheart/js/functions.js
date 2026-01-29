@@ -11,7 +11,7 @@ var heartScale = 1;
 var renderTimer = null;
 
 /* =========================
-   Resize + Layout
+   Resize + Layout + Canvas
 ========================= */
 function resizeLayoutAndCanvas() {
     var $loveHeart = $("#loveHeart");
@@ -22,9 +22,9 @@ function resizeLayoutAndCanvas() {
 
     var isSmall = window.matchMedia && window.matchMedia("(max-width: 900px)").matches;
 
-    /* ---- Layout ---- */
+    // ---- Layout ----
     if (isSmall) {
-        // 手机 / 平板：上下排
+        // 手机/平板：上下排（不靠 JS 强行算 content 宽高）
         $content.css({
             width: "100%",
             height: "auto",
@@ -32,9 +32,10 @@ function resizeLayoutAndCanvas() {
             marginLeft: "0px"
         });
 
+        // ✅ 手机端爱心容器更紧凑一些
         $loveHeart.css({
             width: "100%",
-            height: Math.max(Math.floor(window.innerHeight * 0.65), 420) + "px"
+            height: Math.max(Math.floor(window.innerHeight * 0.58), 360) + "px"
         });
 
         $code.css({
@@ -42,7 +43,7 @@ function resizeLayoutAndCanvas() {
             height: "auto"
         });
     } else {
-        // PC：左右排（保持经典）
+        // PC：左右排，保留经典比例
         $content.css({
             width: "",
             height: "",
@@ -55,7 +56,7 @@ function resizeLayoutAndCanvas() {
         });
     }
 
-    /* ---- Canvas Size ---- */
+    // ---- Canvas Size (HiDPI) ----
     gardenCanvas = $garden[0];
     var w = Math.max(1, $loveHeart.width());
     var h = Math.max(1, $loveHeart.height());
@@ -70,18 +71,19 @@ function resizeLayoutAndCanvas() {
     gardenCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
     gardenCtx.globalCompositeOperation = "lighter";
 
-    /* ---- Heart Center ---- */
+    // ---- Heart Center ----
     offsetX = w / 2;
     offsetY = isSmall ? h / 2 : h / 2 - 55;
 
-    /* ---- Heart Scale ---- */
+    // ---- Heart Scale (make smaller on mobile) ----
     if (isSmall) {
-        heartScale = Math.min(w, h) / 600;   // 数字越大 → 心越小
-        heartScale = Math.max(0.6, Math.min(0.85, heartScale));
+        heartScale = Math.min(w, h) / 720; // 分母越大 → 心越小（600偏大，720更合适）
+        heartScale = Math.max(0.55, Math.min(0.78, heartScale));
     } else {
         heartScale = 1;
     }
 
+    // 清画布，避免残影
     if (garden) {
         try { garden.clear(); } catch (e) {}
     }
@@ -95,6 +97,7 @@ function initGarden() {
     if ($garden.length === 0) return;
 
     resizeLayoutAndCanvas();
+
     garden = new Garden(gardenCtx, gardenCanvas);
 
     if (renderTimer) clearInterval(renderTimer);
@@ -108,12 +111,14 @@ function initGarden() {
 ========================= */
 function getHeartPoint(c) {
     var b = c / Math.PI;
+
     var a = 19.5 * (16 * Math.pow(Math.sin(b), 3));
     var d = -20 * (13 * Math.cos(b)
         - 5 * Math.cos(2 * b)
         - 2 * Math.cos(3 * b)
         - Math.cos(4 * b));
 
+    // ✅ scale
     a *= heartScale;
     d *= heartScale;
 
@@ -161,7 +166,7 @@ function startHeartAnimation() {
 }
 
 /* =========================
-   Effects
+   Typewriter + Timer
 ========================= */
 (function ($) {
     $.fn.typewriter = function () {
@@ -169,6 +174,7 @@ function startHeartAnimation() {
             var $ele = $(this),
                 str = $ele.html(),
                 progress = 0;
+
             $ele.html("");
 
             var timer = setInterval(function () {
@@ -212,19 +218,16 @@ function timeElapse(c) {
     );
 }
 
+/* =========================
+   Messages
+   说明：#words 已经用 CSS 居中，
+   所以这里不再做 top/left 计算（避免抖动/偏移）
+========================= */
 function showMessages() {
-    adjustWordsPosition();
     $("#messages").fadeIn(2000);
 }
 
-function adjustWordsPosition() {
-    $("#words").css({
-        position: "absolute",
-        top: ($("#loveHeart").height() * 0.3) + "px",
-        left: ($("#loveHeart").width() * 0.12) + "px"
-    });
-}
-
+/* PC 端保持经典排版；手机不强制 */
 function adjustCodePosition() {
     if (window.matchMedia && window.matchMedia("(max-width: 900px)").matches) return;
     $("#code").css("margin-top",
@@ -233,18 +236,34 @@ function adjustCodePosition() {
 }
 
 /* =========================
-   Ready + Resize
+   Ready + Anti-jitter Resize
+   关键：忽略手机地址栏导致的“小高度变化”，防止抖动
 ========================= */
 $(function () {
     initGarden();
     adjustCodePosition();
 
     var t = null;
+    var lastW = window.innerWidth;
+    var lastH = window.innerHeight;
+
     $(window).on("resize orientationchange", function () {
         clearTimeout(t);
         t = setTimeout(function () {
-            initGarden();
-            adjustCodePosition();
-        }, 150);
+            var wNow = window.innerWidth;
+            var hNow = window.innerHeight;
+
+            var dw = Math.abs(wNow - lastW);
+            var dh = Math.abs(hNow - lastH);
+
+            // ✅ 只在宽度变化明显或高度变化很大（旋转/真正改尺寸）时重建
+            if (dw > 10 || dh > 120) {
+                lastW = wNow;
+                lastH = hNow;
+
+                initGarden();
+                adjustCodePosition();
+            }
+        }, 200);
     });
 });

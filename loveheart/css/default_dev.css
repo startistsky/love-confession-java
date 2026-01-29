@@ -13,31 +13,22 @@ body {
 	overflow: auto;
 }
 
-/* ✅ 整页居中（卡片效果） */
 #mainDiv {
 	width: 100%;
 	min-height: 100vh;
-
-	display: flex;
-	align-items: center;      /* ⭐ 垂直居中 */
-	justify-content: center;  /* ⭐ 水平居中 */
-
 	font-size: 14px;
 	box-sizing: border-box;
 }
 
-/* ===== Layout (PC default) ===== */
+/* ===== PC default: two columns ===== */
 #content {
-	width: 100%;
 	max-width: 1200px;
-
 	margin: 0 auto;
-	padding: 24px;
+	padding: 16px;
 
 	display: flex;
 	gap: 24px;
-
-	align-items: center;      /* ⭐ 左右两块在同一中线 */
+	align-items: center;      /* 让左右两块在同一水平中线 */
 	justify-content: center;
 
 	box-sizing: border-box;
@@ -54,6 +45,9 @@ body {
 	font-size: 12px;
 	line-height: 1.7;
 	word-break: break-word;
+
+	/* 你要文字居中就开这一行 */
+	text-align: center;
 }
 
 /* Right heart */
@@ -64,17 +58,16 @@ body {
 	height: 625px;
 
 	position: relative;
-	margin: 0 auto;           /* ✅ 爱心区域居中 */
+	margin: 0 auto;           /* ✅ 爱心区域在右侧空间内居中 */
 }
 
-/* Canvas */
 #garden {
 	width: 100%;
 	height: 100%;
 	display: block;
 }
 
-/* Words centered inside heart */
+/* Center text inside heart */
 #words {
 	font-family: "sans-serif";
 	position: absolute;
@@ -94,12 +87,10 @@ body {
 	color: #666;
 
 	pointer-events: none;
-	transform: translateY(-10px); /* 微调上下位置 */
+	transform: translateY(-10px);
 }
 
-#messages {
-	display: none;
-}
+#messages { display: none; }
 
 #elapseClock {
 	text-align: center;
@@ -112,31 +103,17 @@ body {
 	font-size: 34px;
 }
 
-/* Keep original helpers */
+/* Helpers */
 #code .string { color: #2a36ff; }
 #code .keyword { color: #000000; }
 #code .placeholder { margin-left: 15px; }
 #code .space { margin-left: 7px; }
 
-/* 如果你想署名永远黑色，把下面改成 #333 */
+/* 如果你不想绿色署名，把它改成 #333 */
 #code .comments { color: #3f7f5f; }
 
-#loveu {
-	padding: 5px;
-	font-size: 24px;
-	margin-top: 80px;
-	margin-right: 120px;
-	text-align: right;
-	display: none;
-}
-
-#loveu .signature {
-	margin-top: 10px;
-	font-size: 20px;
-	font-style: italic;
-}
-
 #clickSound { display: none; }
+#loveu { display: none; }
 
 #copyright {
 	margin-top: 10px;
@@ -156,27 +133,20 @@ body {
 
 #copyright a { color: #666; }
 
-/* ===== Mobile / Tablet ===== */
+/* ===== Mobile/Tablet: stacked vertical ===== */
 @media (max-width: 900px) {
-	/* 手机端：不要严格垂直居中，稍微靠上更舒服 */
-	#mainDiv {
-		align-items: flex-start;
-		padding-top: 24px;
-	}
-
 	#content {
-		flex-direction: column;
+		flex-direction: column;   /* ✅ 关键：上下布局 */
 		align-items: center;
 		justify-content: flex-start;
-
-		padding: 12px;
 		gap: 16px;
+		padding: 12px;
 	}
 
 	#code {
 		width: 100%;
 		max-width: 720px;
-		font-size: 16px;
+		font-size: 16px;          /* 手机上更易读 */
 		margin: 0 auto;
 	}
 
@@ -184,7 +154,7 @@ body {
 		width: 100%;
 		max-width: 720px;
 
-		height: 58vh;          /* 与 JS 配合 */
+		height: 58vh;             /* 手机上更紧凑 */
 		min-height: 360px;
 
 		margin: 0 auto;
@@ -195,11 +165,6 @@ body {
 		transform: translateY(-6px);
 	}
 
-	#elapseClock {
-		font-size: 16px;
-	}
-
-	#elapseClock .digit {
-		font-size: 30px;
-	}
+	#elapseClock { font-size: 16px; }
+	#elapseClock .digit { font-size: 30px; }
 }

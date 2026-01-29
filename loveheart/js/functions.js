@@ -62,9 +62,14 @@ function resizeLayoutAndCanvas() {
     gardenCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
     gardenCtx.globalCompositeOperation = "lighter";
 
-    // 更新 offset（你的心形公式依赖它）
     offsetX = w / 2;
-    offsetY = h / 2 - 55;
+
+// 手机/平板不要往上推，避免爱心被裁
+    if (window.matchMedia && window.matchMedia("(max-width: 900px)").matches) {
+        offsetY = h / 2;
+    } else {
+        offsetY = h / 2 - 55;
+    }
 
     // 如果 garden 已经存在，清一下避免残影
     if (garden) {

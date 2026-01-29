@@ -113,3 +113,73 @@ body {
 #copyright a{
 	color:#666;
 }
+
+/* 让整体不会横向溢出 */
+html, body {
+	width: 100%;
+	overflow-x: hidden;
+}
+
+/* 内容容器：桌面左右排 */
+#content{
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 16px;
+	display: flex;
+	gap: 16px;
+	align-items: flex-start;
+}
+
+/* 左边文字区域：不再固定宽度 */
+#code{
+	width: 40%;
+	max-width: 520px;
+	height: auto;
+	font-size: 14px;
+	line-height: 1.7;
+}
+
+/* 右边爱心区域：自适应 */
+#loveHeart{
+	width: 60%;
+	max-width: 720px;
+	height: auto;
+}
+
+/* 让 canvas 随容器缩放 */
+#garden{
+	width: 100%;
+	height: auto;
+	display: block;
+}
+
+/* 文字区域也自适应 */
+#words{
+	width: 100%;
+	max-width: 520px;
+	font-size: 22px;
+}
+
+/* ====== 手机/平板：改成上下排 ====== */
+@media (max-width: 900px){
+	#content{
+		flex-direction: column;
+		align-items: center;
+	}
+
+	#code, #loveHeart{
+		width: 100%;
+		max-width: 720px;
+	}
+
+	/* 爱心区域给一个合理高度（不然会太扁/太小） */
+	#loveHeart{
+		height: 70vh;       /* 屏幕高度的 70% */
+		min-height: 420px;  /* 太小屏也有最小高度 */
+	}
+
+	/* 手机上字太小就放大一点 */
+	#code{
+		font-size: 16px;
+	}
+}

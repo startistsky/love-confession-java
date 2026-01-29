@@ -22,9 +22,9 @@ function resizeLayoutAndCanvas() {
 
     var isSmall = window.matchMedia && window.matchMedia("(max-width: 900px)").matches;
 
-    // ---- Layout ----
+    /* ---- Layout ---- */
     if (isSmall) {
-        // 手机/平板：上下排（不靠 JS 强行算 content 宽高）
+        // 手机 / 平板：上下排
         $content.css({
             width: "100%",
             height: "auto",
@@ -32,7 +32,6 @@ function resizeLayoutAndCanvas() {
             marginLeft: "0px"
         });
 
-        // ✅ 手机端爱心容器更紧凑一些
         $loveHeart.css({
             width: "100%",
             height: Math.max(Math.floor(window.innerHeight * 0.58), 360) + "px"
@@ -43,7 +42,7 @@ function resizeLayoutAndCanvas() {
             height: "auto"
         });
     } else {
-        // PC：左右排，保留经典比例
+        // PC：左右排（经典）
         $content.css({
             width: "",
             height: "",
@@ -56,7 +55,7 @@ function resizeLayoutAndCanvas() {
         });
     }
 
-    // ---- Canvas Size (HiDPI) ----
+    /* ---- Canvas Size (HiDPI) ---- */
     gardenCanvas = $garden[0];
     var w = Math.max(1, $loveHeart.width());
     var h = Math.max(1, $loveHeart.height());
@@ -71,19 +70,18 @@ function resizeLayoutAndCanvas() {
     gardenCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
     gardenCtx.globalCompositeOperation = "lighter";
 
-    // ---- Heart Center ----
+    /* ---- Heart Center ---- */
     offsetX = w / 2;
     offsetY = isSmall ? h / 2 : h / 2 - 55;
 
-    // ---- Heart Scale (make smaller on mobile) ----
+    /* ---- Heart Scale ---- */
     if (isSmall) {
-        heartScale = Math.min(w, h) / 720; // 分母越大 → 心越小（600偏大，720更合适）
+        heartScale = Math.min(w, h) / 720;
         heartScale = Math.max(0.55, Math.min(0.78, heartScale));
     } else {
         heartScale = 1;
     }
 
-    // 清画布，避免残影
     if (garden) {
         try { garden.clear(); } catch (e) {}
     }
@@ -97,7 +95,6 @@ function initGarden() {
     if ($garden.length === 0) return;
 
     resizeLayoutAndCanvas();
-
     garden = new Garden(gardenCtx, gardenCanvas);
 
     if (renderTimer) clearInterval(renderTimer);
@@ -118,7 +115,6 @@ function getHeartPoint(c) {
         - 2 * Math.cos(3 * b)
         - Math.cos(4 * b));
 
-    // ✅ scale
     a *= heartScale;
     d *= heartScale;
 
@@ -220,14 +216,13 @@ function timeElapse(c) {
 
 /* =========================
    Messages
-   说明：#words 已经用 CSS 居中，
-   所以这里不再做 top/left 计算（避免抖动/偏移）
+   #words 已用 CSS 居中
 ========================= */
 function showMessages() {
     $("#messages").fadeIn(2000);
 }
 
-/* PC 端保持经典排版；手机不强制 */
+/* PC only */
 function adjustCodePosition() {
     if (window.matchMedia && window.matchMedia("(max-width: 900px)").matches) return;
     $("#code").css("margin-top",
@@ -237,7 +232,8 @@ function adjustCodePosition() {
 
 /* =========================
    Ready + Anti-jitter Resize
-   关键：忽略手机地址栏导致的“小高度变化”，防止抖动
+   只响应“宽度变化”，
+   打字 / 地址栏变化不会再抖
 ========================= */
 $(function () {
     initGarden();
@@ -245,22 +241,15 @@ $(function () {
 
     var t = null;
     var lastW = window.innerWidth;
-    var lastH = window.innerHeight;
 
     $(window).on("resize orientationchange", function () {
         clearTimeout(t);
         t = setTimeout(function () {
             var wNow = window.innerWidth;
-            var hNow = window.innerHeight;
-
             var dw = Math.abs(wNow - lastW);
-            var dh = Math.abs(hNow - lastH);
 
-            // ✅ 只在宽度变化明显或高度变化很大（旋转/真正改尺寸）时重建
-            if (dw > 10 || dh > 120) {
+            if (dw > 10) {
                 lastW = wNow;
-                lastH = hNow;
-
                 initGarden();
                 adjustCodePosition();
             }

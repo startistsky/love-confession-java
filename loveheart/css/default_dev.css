@@ -1,6 +1,7 @@
 /* ===== Base ===== */
 html, body {
 	width: 100%;
+	height: 100%;
 	overflow-x: hidden;
 }
 
@@ -12,21 +13,34 @@ body {
 	overflow: auto;
 }
 
+/* ✅ 整页居中（卡片效果） */
 #mainDiv {
 	width: 100%;
 	min-height: 100vh;
+
+	display: flex;
+	align-items: center;      /* ⭐ 垂直居中 */
+	justify-content: center;  /* ⭐ 水平居中 */
+
 	font-size: 14px;
+	box-sizing: border-box;
 }
 
 /* ===== Layout (PC default) ===== */
 #content {
+	width: 100%;
 	max-width: 1200px;
+
 	margin: 0 auto;
-	padding: 16px;
+	padding: 24px;
 
 	display: flex;
-	gap: 16px;
-	align-items: flex-start;
+	gap: 24px;
+
+	align-items: center;      /* ⭐ 左右两块在同一中线 */
+	justify-content: center;
+
+	box-sizing: border-box;
 }
 
 /* Left text */
@@ -40,10 +54,9 @@ body {
 	font-size: 12px;
 	line-height: 1.7;
 	word-break: break-word;
-	/* 如果你希望整体文字居中，也可以在 HTML 里给 #code 加 text-align:center */
 }
 
-/* Right heart (PC) */
+/* Right heart */
 #loveHeart {
 	flex: 1 1 auto;
 	width: 100%;
@@ -51,9 +64,10 @@ body {
 	height: 625px;
 
 	position: relative;
-	margin: 0 auto;        /* ✅ 关键：在右侧 flex 区域内居中 */
+	margin: 0 auto;           /* ✅ 爱心区域居中 */
 }
 
+/* Canvas */
 #garden {
 	width: 100%;
 	height: 100%;
@@ -103,7 +117,9 @@ body {
 #code .keyword { color: #000000; }
 #code .placeholder { margin-left: 15px; }
 #code .space { margin-left: 7px; }
-#code .comments { color: #3f7f5f; } /* 如果你想全局署名变黑，把这里改成 #333 */
+
+/* 如果你想署名永远黑色，把下面改成 #333 */
+#code .comments { color: #3f7f5f; }
 
 #loveu {
 	padding: 5px;
@@ -120,9 +136,7 @@ body {
 	font-style: italic;
 }
 
-#clickSound {
-	display: none;
-}
+#clickSound { display: none; }
 
 #copyright {
 	margin-top: 10px;
@@ -140,23 +154,30 @@ body {
 	left: 0;
 }
 
-#copyright a {
-	color: #666;
-}
+#copyright a { color: #666; }
 
 /* ===== Mobile / Tablet ===== */
 @media (max-width: 900px) {
+	/* 手机端：不要严格垂直居中，稍微靠上更舒服 */
+	#mainDiv {
+		align-items: flex-start;
+		padding-top: 24px;
+	}
+
 	#content {
 		flex-direction: column;
-		align-items: stretch;  /* ✅ 拉满容器，居中交给内部 */
+		align-items: center;
+		justify-content: flex-start;
+
 		padding: 12px;
+		gap: 16px;
 	}
 
 	#code {
 		width: 100%;
 		max-width: 720px;
 		font-size: 16px;
-		margin: 0 auto;        /* ✅ 居中 */
+		margin: 0 auto;
 	}
 
 	#loveHeart {
@@ -166,7 +187,7 @@ body {
 		height: 58vh;          /* 与 JS 配合 */
 		min-height: 360px;
 
-		margin: 0 auto;        /* ✅ 手机端也居中 */
+		margin: 0 auto;
 	}
 
 	#words {
